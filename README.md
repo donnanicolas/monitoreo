@@ -25,7 +25,7 @@ Presenta funcionalidades para controlar los procesos corriendo en el sistema.
 El sistema está preparado para sistema UNIX. Es posible ampliar la funcionalidad a Windows sin mayores inconvenientes.
 
 # Rutas
-La aplicación cuenta con 5 rutas
+La aplicación cuenta con 6 rutas
 
 ## GET /ps
 La misma devuelve todos los procesos corriendo en el sistema. Los campos devueltos son los siguientes:
