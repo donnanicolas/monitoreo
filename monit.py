@@ -24,7 +24,6 @@ def ps():
     for p in psutil.process_iter():
         processes.append(p.as_dict())
 
-    print processes
     return jsonify(processes=processes, result='ok')
 
 @app.route('/users', methods=['GET'])
@@ -59,7 +58,6 @@ def user_tasks(user):
             continue
         processes.append(p.as_dict())
 
-    print processes
     return jsonify(processes=processes, result='ok')
 
 @app.route('/ps', methods=['POST'])
@@ -77,9 +75,9 @@ def popen():
     if 'args' in data:
         cmd = cmd + data['args']
 
-    psutil.Popen(cmd)
+    p = psutil.Popen(cmd)
 
-    return jsonify(result='ok')
+    return jsonify(result='ok', process=p.pid)
 
 @app.route('/ps', methods=['DELETE'])
 def kill():
@@ -125,7 +123,7 @@ def kill():
 
     return jsonify(result='ok')
 
-@app.route('/ps', methods=['PUT'])
+@app.route('/ps', methods=['PATCH'])
 def nice():
     data = request.get_json(silent=True)
 
