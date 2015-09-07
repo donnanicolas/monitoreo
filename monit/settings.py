@@ -49,6 +49,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'api.middleware.api_key_middleware.ApiKeyMiddleware',
 )
 
 ROOT_URLCONF = 'monit.urls'
