@@ -4,7 +4,6 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class ApiKeyMiddleware(object):
     def process_request(self, request):
-        print request.get_full_path()
         if not request.get_full_path().startswith('/api'):
             return None
 
