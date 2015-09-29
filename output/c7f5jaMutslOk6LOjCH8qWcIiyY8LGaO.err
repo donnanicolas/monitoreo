@@ -1,0 +1,2 @@
+ls: illegal option -- z
+usage: ls [-ABCFGHLOPRSTUWabcdefghiklmnopqrstuwx1] [file ...]

@@ -5,15 +5,25 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+import time
+
+import threading
+
+from models import generate_key
 
 #Error msgs
 BAD_JSON_RESPONSE = { 'result': 'error', 'message': 'Bad JSON payload' }
 NO_CMD_RESPONSE = { 'result': 'error', 'message': 'No "cmd" parameter' }
 NO_PID_RESPONSE = { 'result': 'error', 'message': 'No "pid" parameter' }
+BAD_CMD_RESPONSE = { 'result': 'error', 'message': 'The CMD doesn\'t exists' }
 NO_PRIORITY_RESPONSE = { 'result': 'error', 'message': 'No "priority" parameter' }
 BAD_PS_PATCH_RESPONSE = { 'result': 'error', 'message': 'Bad Data' }
 BAD_PATCH_PRIORITY_RESPONSE = { 'result': 'error', 'message': 'Bad Priority' }
 NOT_ENOUGH_PERMISSION_RESPONSE = { 'result': 'error', 'message': 'No enough permission for changing nice to process' }
+BAD_PID_RESPONSE = { 'result': 'error', 'message': 'The PID is invalid' }
+NO_PROCESS_PID_RESPONSE = { 'result': 'error', 'message': 'There is no process with the given PID' }
+KILL_CURRENT_RESPONSE = { 'result': 'error', 'message': 'Can not kill current process' }
+KILL_PARENT_RESPONSE = { 'result': 'error', 'message': 'Can not kill parent of current process' }
 
 class NoCSRFView(View):
     @method_decorator(csrf_exempt)
@@ -43,9 +53,20 @@ class PsView(NoCSRFView):
         if 'args' in data:
             cmd = cmd + data['args']
 
-        p = psutil.Popen(cmd)
+        outputKey = generate_key()
+        outfile = open('output/' + outputKey + '.out','w')
+        errfile = open('output/' + outputKey + '.err','w')
+        try:
+            p = psutil.Popen(cmd, stdout=outfile, stderr=errfile)
+        except OSError as e:
+            outfile.close()
+            errfile.close()
+            return JsonResponse(BAD_CMD_RESPONSE, status=400)
+        else:
+            t = threading.Thread(target=runCmd, args=(p, outfile, errfile))
+            t.start()
 
-        return JsonResponse({'result': 'ok', 'process': p.pid})
+            return JsonResponse({'result': 'ok', 'process': p.pid, 'output': outputKey })
 
     def delete(self, request):
         try:
@@ -59,15 +80,15 @@ class PsView(NoCSRFView):
         try:
             pid = int(data['pid'])
         except Exception as e:
-            return respond_with_error('Bad pid')
+            return JsonResponse(BAD_PID_RESPONSE, status=400)
 
         if not psutil.pid_exists(pid):
-            return respond_with_error('No process with pid :' + str(pid))
+            return JsonResponse(NO_PROCESS_PID_RESPONSE, status=400)
 
         current = psutil.Process(os.getpid())
 
         if current.pid == pid:
-            return respond_with_error('Can not kill current process')
+            return JsonResponse(KILL_CURRENT_RESPONSE, status=400)
 
         is_parent = False
 
@@ -83,7 +104,7 @@ class PsView(NoCSRFView):
             current = psutil.Process(current.ppid())
 
         if is_parent:
-            return respond_with_error('Can not kill parent of current process')
+            return JsonResponse(KILL_PARENT_RESPONSE, status=400)
 
         process = psutil.Process(pid)
         process.kill()
@@ -123,7 +144,21 @@ class PsView(NoCSRFView):
 
         return JsonResponse({'result': 'ok'})
 
-class UserView(View):
+class ProcessView(NoCSRFView):
+    def get(self, request, process):
+
+        try:
+            pid = int(process)
+        except Exception as e:
+            return JsonResponse(BAD_PID_RESPONSE, status=400)
+
+        if not psutil.pid_exists(pid):
+            return JsonResponse(NO_PROCESS_PID_RESPONSE, status=400)
+
+        current = psutil.Process(os.getpid())
+        return JsonResponse({'process': current.as_dict(), 'result': 'ok'})
+
+class UserView(NoCSRFView):
     def get(self, request):
         users = {}
 
@@ -145,7 +180,7 @@ class UserView(View):
 
         return JsonResponse({'users': user_list, 'result': 'ok'})
 
-class UserTaskView(View):
+class UserTaskView(NoCSRFView):
     def get(self, request, user):
         processes = []
 
@@ -155,3 +190,25 @@ class UserTaskView(View):
             processes.append(p.as_dict())
 
         return JsonResponse({'processes':processes, 'result': 'ok'})
+
+class ProcessOutputView(View):
+    def get(self, request, output):
+        outfile = open('output/' + output + '.out', 'r')
+        errfile = open('output/' + output + '.err', 'r')
+        response = {
+            'out': "".join(line.rstrip() for line in outfile),
+            'err': "".join(line.rstrip() for line in errfile),
+        }
+        outfile.close()
+        errfile.close()
+        return JsonResponse(response)
+
+def runCmd(p, outfile, errfile):
+    #Kill after a while
+    #p.communicate
+    time.sleep(10)
+    if not p.poll():
+        p.kill()
+
+    outfile.close()
+    errfile.close()

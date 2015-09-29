@@ -14,11 +14,11 @@ def generate_random_string(length, stringset=string.ascii_letters+string.digits)
         for i in [ord(x) for x in os.urandom(length)]])
 
 def generate_key():
-    return generate_random_string(512)
+    return generate_random_string(32)
 
 # Create your models here.
 class Key(models.Model):
     user = models.ForeignKey(User)
     name = models.CharField(max_length=128)
-    key = models.CharField(max_length=512, default=generate_key)
+    key = models.CharField(max_length=32, default=generate_key)
     created_at = models.DateTimeField(default=now)
