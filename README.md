@@ -22,9 +22,12 @@ El sistema es una API RESTful que trabaja con formato JSON.
 Presenta funcionalidades para controlar los procesos corriendo en el sistema.
 El sistema está preparado para sistema UNIX. Es posible ampliar la funcionalidad a Windows sin mayores inconvenientes.
 
+#Ejemplo
+El servidor está en http://monitoreo.donnanicolas.com.ar/
+
 #Autorización
 
-Ingresando al administrador se debe crear una `key` y luego enviarla en cada request en la cabecera header de la siguiente manera:
+Ingresando al administrador (http://monitoreo.donnanicolas.com.ar/admin/) con su clave y contraseña y cree una `key` y luego se debe enviar en cada request en el header `Authorization` de la siguiente manera:
 ```
 Authorization: Bearer [su clave]
 ```
@@ -32,7 +35,8 @@ Authorization: Bearer [su clave]
 # Rutas
 La aplicación cuenta con 8 rutas
 
-## GET /ps
+## GET /api/ps
+
 La misma devuelve todos los procesos corriendo en el sistema. Los campos devueltos son los siguientes:
 
 Nombre | Explicación
@@ -65,10 +69,10 @@ username | El usuario dueño de este proceso
 
 Dependiendo de la plataforma puede aparecer algunos campos más, para más información dirigirse a [psutil#Process](http://pythonhosted.org/psutil/#process-class)
 
-## GET /ps/:process
+## GET /api/ps/:process
 Devuelve la información del proceso :process. Para información sobre los campos ver **GET /ps**
 
-## GET /users
+## GET /api/users
 Devuelve los usuarios que están corriendo procesos en el sistema.
 
 Nombre | Explicación
@@ -76,12 +80,12 @@ Nombre | Explicación
 username | Nombre del usuario
 running | Cantidad de procesos que está corriendo
 
-## GET /users/:username/tasks
+## GET /api/users/:username/tasks
 Devuelve la información sobre los procesos que está corriendo el usuario con el nombre :username
 
 Para más información sobre los campos vea [GET /ps](#GET-/ps)
 
-## POST /ps
+## POST /api/ps
 Esta ruta corre el comando que se pasa como parametro *cmd*. Es una funcionalidad peligrosa ya que se puede correr virtualmente cualquier comando.
 
 ### Parametros
@@ -106,7 +110,7 @@ Los procesos tienen 10 segundo para terminar, al cabo de ese tiempo son destruid
 El resultado de esta ruta es el **pid** del proceso, y **output**, un id de 32 letras que permite obtener el resultado del proceso. Ver **GET /ps/output/:output**.
 
 
-## GET /ps/output/:output
+## GET /api/ps/output/:output
 
 Si el valor de **:output** es el valor **output** devuelto por POST /ps, entonces se obtendra lo escrito en stdout y stderr por ese proceso.
 
@@ -117,7 +121,7 @@ out | Lo escrito en stdout por el proceso
 err | Lo escrito en stderr por el proceso
 
 
-## DELETE /ps
+## DELETE /api/ps
 Esta ruta envia un *SIGKILL* al proceso bajo con el *pid* enviado como argumento.
 Para evitar problemas si el *pid* es el mismo proceso o es padre del proceso del servidor no se puede matar.
 
@@ -136,7 +140,7 @@ pid | Id del proceso
 ```
 
 
-## PATCH /ps
+## PATCH /api/ps
 Esta ruta simplemente corre el comando **renice**.
 
 ### Parametros
