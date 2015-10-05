@@ -70,7 +70,8 @@ username | El usuario dueño de este proceso
 Dependiendo de la plataforma puede aparecer algunos campos más, para más información dirigirse a [psutil#Process](http://pythonhosted.org/psutil/#process-class)
 
 ## GET /api/ps/:process
-Devuelve la información del proceso :process. Para información sobre los campos ver **GET /ps**
+**:process** debe ser un pid
+Devuelve la información del proceso **:process**. Para información sobre los campos ver **GET /ps**
 
 ## GET /api/users
 Devuelve los usuarios que están corriendo procesos en el sistema.
@@ -81,6 +82,7 @@ username | Nombre del usuario
 running | Cantidad de procesos que está corriendo
 
 ## GET /api/users/:username/tasks
+**:username** debe ser un usuario existente en el sistema
 Devuelve la información sobre los procesos que está corriendo el usuario con el nombre :username
 
 Para más información sobre los campos vea [GET /ps](#GET-/ps)
