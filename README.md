@@ -22,6 +22,13 @@ El sistema es una API RESTful que trabaja con formato JSON.
 Presenta funcionalidades para controlar los procesos corriendo en el sistema.
 El sistema está preparado para sistema UNIX. Es posible ampliar la funcionalidad a Windows sin mayores inconvenientes.
 
+#Autorización
+
+Ingresando al administrador se debe crear una `key` y luego enviarla en cada request en la cabecera header de la siguiente manera:
+```
+Authorization: Bearer [su clave]
+```
+
 # Rutas
 La aplicación cuenta con 8 rutas
 
