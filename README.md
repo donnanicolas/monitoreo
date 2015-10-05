@@ -1,8 +1,10 @@
 # Monit
+
 Esta aplicación es un trabajo para la materia Monitoreo y Gestión de Redes de la carrera de Ingeniería en Infomática de la Universidad de Mendoza.
 **Bajo ningún concepto se debe utilizar esta aplicación en producción**, ya que puede generar grandes problemas en un servidor al matar procesos, repriorizarlos o crear nuevos.
 
 # Instalación
+
 Esta aplicación esta hecha en Django (python)
 Se debe tener instalado **Python 2.7.x**
 
@@ -18,11 +20,13 @@ python manage.py runserver
 ```
 
 #Aplicación
+
 El sistema es una API RESTful que trabaja con formato JSON.
 Presenta funcionalidades para controlar los procesos corriendo en el sistema.
 El sistema está preparado para sistema UNIX. Es posible ampliar la funcionalidad a Windows sin mayores inconvenientes.
 
 #Ejemplo
+
 El servidor está en http://monitoreo.donnanicolas.com.ar/
 
 #Autorización
@@ -33,6 +37,7 @@ Authorization: Bearer [su clave]
 ```
 
 # Rutas
+
 La aplicación cuenta con 8 rutas
 
 ## GET /api/ps
@@ -70,10 +75,12 @@ username | El usuario dueño de este proceso
 Dependiendo de la plataforma puede aparecer algunos campos más, para más información dirigirse a [psutil#Process](http://pythonhosted.org/psutil/#process-class)
 
 ## GET /api/ps/:process
+
 **:process** debe ser un pid
 Devuelve la información del proceso **:process**. Para información sobre los campos ver **GET /ps**
 
 ## GET /api/users
+
 Devuelve los usuarios que están corriendo procesos en el sistema.
 
 Nombre | Explicación
@@ -82,6 +89,7 @@ username | Nombre del usuario
 running | Cantidad de procesos que está corriendo
 
 ## GET /api/users/:username/tasks
+
 **:username** debe ser un usuario existente en el sistema
 Devuelve la información sobre los procesos que está corriendo el usuario con el nombre :username
 
