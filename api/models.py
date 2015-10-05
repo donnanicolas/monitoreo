@@ -20,5 +20,8 @@ def generate_key():
 class Key(models.Model):
     user = models.ForeignKey(User)
     name = models.CharField(max_length=128)
-    key = models.CharField(max_length=32, default=generate_key)
+    key = models.CharField(max_length=32, default=generate_key, unique=True)
     created_at = models.DateTimeField(default=now)
+
+    class Meta:
+        unique_together = (("user", "name"),)
