@@ -1,4 +1,4 @@
-# Monit
+# Monitoreo
 
 Esta aplicación es un trabajo para la materia Monitoreo y Gestión de Redes de la carrera de Ingeniería en Infomática de la Universidad de Mendoza.
 **Bajo ningún concepto se debe utilizar esta aplicación en producción**, ya que puede generar grandes problemas en un servidor al matar procesos, repriorizarlos o crear nuevos.
@@ -11,7 +11,10 @@ Se debe tener instalado **Python 2.7.x**
 Para instalar las dependencias, simplemente correr:
 ```bash
 pip install -r requirements.txt
+python manage.py migrate
 ```
+
+
 
 Para correr el servidor
 
@@ -19,17 +22,19 @@ Para correr el servidor
 python manage.py runserver
 ```
 
-#Aplicación
+# Aplicación
 
 El sistema es una API RESTful que trabaja con formato JSON.
 Presenta funcionalidades para controlar los procesos corriendo en el sistema.
 El sistema está preparado para sistema UNIX. Es posible ampliar la funcionalidad a Windows sin mayores inconvenientes.
 
-#Ejemplo
+La misma ha sido desarrollada en [Python](https://www.python.org/), utilizando [Django](djangoproject.com) para armar la API y el administrador. Para manejar los procesos se utilizo la herramienta [psutil](http://pythonhosted.org/psutil/).
+
+# Demo
 
 El servidor está en http://monitoreo.donnanicolas.com.ar/
 
-#Autorización
+# Autorización
 
 Ingresando al administrador (http://monitoreo.donnanicolas.com.ar/admin/) con su clave y contraseña y cree una `key` y luego se debe enviar en cada request en el header `Authorization` de la siguiente manera:
 ```
@@ -50,6 +55,7 @@ cmdline | Comando de la linea de comando con que fue llamado
 connections | Sockets abiertos por este procesos
 cpu_percent | Porcentaje de procesamiento ocupado
 cpu_times |  Arreglo con [segundos en espacio de usuario, segundos en espacio de sistema]
+cpu_affinity | En que procesador/es correr este proceso
 create_time | Tiempo de creación
 cwd | Directorio absoluto de trabajo
 exe | El ejecutable de este proceso
@@ -76,7 +82,8 @@ Dependiendo de la plataforma puede aparecer algunos campos más, para más infor
 
 ## GET /api/ps/:process
 
-**:process** debe ser un pid
+**:process** debe ser un pid.
+
 Devuelve la información del proceso **:process**. Para información sobre los campos ver **GET /ps**
 
 ## GET /api/users
@@ -97,6 +104,10 @@ Para más información sobre los campos vea [GET /ps](#GET-/ps)
 
 ## POST /api/ps
 Esta ruta corre el comando que se pasa como parametro *cmd*. Es una funcionalidad peligrosa ya que se puede correr virtualmente cualquier comando.
+
+Los procesos solo se podrán correr de acuerdo a los permisos que tiene el usuario que está corriendo el servidor.
+
+Los procesos tiene un tiempo máximo de ejecución de 10 segundos, después de los cuales el mismo es terminado si sigue corriendo.
 
 ### Parametros
 
@@ -149,6 +160,20 @@ pid | Id del proceso
 }
 ```
 
+**Atención: No siempre será posible matar al proceso, esto generalmente ocurre por que el proceso pertenece a otro usuario.**
+
+### Posibles soluciones
+
+#### Correr el servidor como root
+
+**Atención: esto puede exponer su servidor. No se recomienda esta solución**
+
+Se puede configurar para que el proceso del servidor sea corrido por el usuario **root**
+
+#### Otras opciones
+
+Existen otras opciones como crear un script que corrar y termine el proceso, o utilizar grupos para poder dar permiso al servidor para temrinar el proceso, pero esas soluciones dependen de cada caso.
+
 
 ## PATCH /api/ps
 Esta ruta simplemente corre el comando **renice**.
@@ -170,3 +195,22 @@ priority | Nueva prioridad. Valor en -20 y 20
 ```
 
 El comando **renice** requiere permisos especiales, por lo tanto solo podrá ser utilizado si el proceso del servidor tiene permisos para hacerlo.
+
+### Posibles soluciones
+
+#### Correr el servidor como Root
+**Atención: esto puede exponer su servidor. No se recomienda esta solución**
+
+Se puede configurar para que el proceso del servidor sea corrido por el usuario **root**
+
+#### Editar sudoers
+
+**Atención: esto puede exponer su servidor. No se recomienda esta solución**
+
+Se puede modificar el archivo `/etc/sudoer`, agregando la linea:
+
+```
+<username> ALL= NOPASSWD:/usr/bin/renice,/bin/nice
+```
+
+Donde _username_ es el nombre del usuario que corre el servidor.

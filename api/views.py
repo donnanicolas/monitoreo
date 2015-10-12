@@ -6,31 +6,23 @@ from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import time
+from messages import *
 
 import threading
 
 from models import generate_key
 
-#Error msgs
-BAD_JSON_RESPONSE = { 'result': 'error', 'message': 'Bad JSON payload' }
-NO_CMD_RESPONSE = { 'result': 'error', 'message': 'No "cmd" parameter' }
-NO_PID_RESPONSE = { 'result': 'error', 'message': 'No "pid" parameter' }
-BAD_CMD_RESPONSE = { 'result': 'error', 'message': 'The CMD doesn\'t exists' }
-NO_PRIORITY_RESPONSE = { 'result': 'error', 'message': 'No "priority" parameter' }
-BAD_PS_PATCH_RESPONSE = { 'result': 'error', 'message': 'Bad Data' }
-BAD_PATCH_PRIORITY_RESPONSE = { 'result': 'error', 'message': 'Bad Priority' }
-NOT_ENOUGH_PERMISSION_RESPONSE = { 'result': 'error', 'message': 'No enough permission for changing nice to process' }
-BAD_PID_RESPONSE = { 'result': 'error', 'message': 'The PID is invalid' }
-NO_PROCESS_PID_RESPONSE = { 'result': 'error', 'message': 'There is no process with the given PID' }
-KILL_CURRENT_RESPONSE = { 'result': 'error', 'message': 'Can not kill current process' }
-KILL_PARENT_RESPONSE = { 'result': 'error', 'message': 'Can not kill parent of current process' }
-
+'''
+Base class for View
+Avoids the CSRF check
+'''
 class NoCSRFView(View):
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(NoCSRFView, self).dispatch(*args, **kwargs)
 
 class PsView(NoCSRFView):
+    # GET /ps
     def get(self, request):
         processes = []
 
@@ -39,6 +31,7 @@ class PsView(NoCSRFView):
 
         return JsonResponse({'processes':processes, 'result': 'ok'})
 
+    # POST /ps
     def post(self, request):
         try:
             data = received_json_data=json.loads(request.body)
@@ -68,6 +61,7 @@ class PsView(NoCSRFView):
 
             return JsonResponse({'result': 'ok', 'process': p.pid, 'output': outputKey })
 
+    # DELETE /ps
     def delete(self, request):
         try:
             data = received_json_data=json.loads(request.body)
@@ -107,10 +101,14 @@ class PsView(NoCSRFView):
             return JsonResponse(KILL_PARENT_RESPONSE, status=400)
 
         process = psutil.Process(pid)
-        process.kill()
+        try:
+            process.kill()
+        except psutil.AccessDenied as e:
+            return JsonResponse(KILL_DENIED, status=500)
 
         return JsonResponse({'result':'ok'})
 
+    # PUT /ps
     def patch(self, request):
         try:
             data = received_json_data=json.loads(request.body)
@@ -145,6 +143,7 @@ class PsView(NoCSRFView):
         return JsonResponse({'result': 'ok'})
 
 class ProcessView(NoCSRFView):
+    # GET /ps/:pid
     def get(self, request, process):
 
         try:
@@ -159,6 +158,8 @@ class ProcessView(NoCSRFView):
         return JsonResponse({'process': current.as_dict(), 'result': 'ok'})
 
 class UserView(NoCSRFView):
+
+    # GET /users
     def get(self, request):
         users = {}
 
@@ -181,6 +182,7 @@ class UserView(NoCSRFView):
         return JsonResponse({'users': user_list, 'result': 'ok'})
 
 class UserTaskView(NoCSRFView):
+    # GET /users/:username/tasks
     def get(self, request, user):
         processes = []
 
@@ -192,6 +194,7 @@ class UserTaskView(NoCSRFView):
         return JsonResponse({'processes':processes, 'result': 'ok'})
 
 class ProcessOutputView(View):
+    # GET /api/ps/output/:output
     def get(self, request, output):
         outfile = open('output/' + output + '.out', 'r')
         errfile = open('output/' + output + '.err', 'r')
@@ -203,6 +206,9 @@ class ProcessOutputView(View):
         errfile.close()
         return JsonResponse(response)
 
+'''
+Function that runs in background to log the output of the process
+'''
 def runCmd(p, outfile, errfile):
     #Kill after a while
     #p.communicate
