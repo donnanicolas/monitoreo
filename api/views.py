@@ -47,8 +47,8 @@ class PsView(NoCSRFView):
             cmd = cmd + data['args']
 
         outputKey = generate_key()
-        outfile = open('output/' + outputKey + '.out','w')
-        errfile = open('output/' + outputKey + '.err','w')
+        outfile = open('/tmp/' + outputKey + '.out','w')
+        errfile = open('/tmp/' + outputKey + '.err','w')
         try:
             p = psutil.Popen(cmd, stdout=outfile, stderr=errfile)
         except OSError as e:
@@ -196,8 +196,8 @@ class UserTaskView(NoCSRFView):
 class ProcessOutputView(View):
     # GET /api/ps/output/:output
     def get(self, request, output):
-        outfile = open('output/' + output + '.out', 'r')
-        errfile = open('output/' + output + '.err', 'r')
+        outfile = open('/tmp/' + output + '.out', 'r')
+        errfile = open('/tmp/' + output + '.err', 'r')
         response = {
             'out': "".join(line.rstrip() for line in outfile),
             'err': "".join(line.rstrip() for line in errfile),
