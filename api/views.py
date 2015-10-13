@@ -193,7 +193,7 @@ class UserTaskView(NoCSRFView):
 
         return JsonResponse({'processes':processes, 'result': 'ok'})
 
-class ProcessOutputView(View):
+class ProcessOutputView(NoCSRFView):
     # GET /api/ps/output/:output
     def get(self, request, output):
         outfile = open('/tmp/' + output + '.out', 'r')
