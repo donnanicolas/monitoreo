@@ -185,10 +185,19 @@ pid | Id del proceso
 
 Se puede configurar para que el proceso del servidor sea corrido por el usuario **root**
 
-#### Otras opciones
+#### Permitir que kill se corrar como sudo sin permisos
 
-Existen otras opciones como crear un script que corrar y termine el proceso, o utilizar grupos para poder dar permiso al servidor para temrinar el proceso, pero esas soluciones dependen de cada caso.
+#### Editar sudoers
 
+**Atención: esto puede exponer su servidor. No se recomienda esta solución**
+
+Se puede modificar el archivo `/etc/sudoers`, agregando la linea:
+
+```
+<username> ALL= NOPASSWD:/usr/bin/kill
+```
+
+Donde _username_ es el nombre del usuario que corre el servidor.
 
 ## PATCH /api/ps
 Esta ruta simplemente corre el comando **renice**.
@@ -222,7 +231,7 @@ Se puede configurar para que el proceso del servidor sea corrido por el usuario 
 
 **Atención: esto puede exponer su servidor. No se recomienda esta solución**
 
-Se puede modificar el archivo `/etc/sudoer`, agregando la linea:
+Se puede modificar el archivo `/etc/sudoers`, agregando la linea:
 
 ```
 <username> ALL= NOPASSWD:/usr/bin/renice,/bin/nice
