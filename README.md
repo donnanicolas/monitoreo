@@ -95,7 +95,7 @@ Nombre | Explicación
 username | Nombre del usuario
 running | Cantidad de procesos que está corriendo
 
-## GET /api/users/:username/tasks
+## GET /api/users/:username/ps
 
 **:username** debe ser un usuario existente en el sistema
 Devuelve la información sobre los procesos que está corriendo el usuario con el nombre :username
@@ -109,19 +109,19 @@ Los procesos solo se podrán correr de acuerdo a los permisos que tiene el usuar
 
 Los procesos tiene un tiempo máximo de ejecución de 10 segundos, después de los cuales el mismo es terminado si sigue corriendo.
 
+
+
 ### Parametros
 
 Nombre | Explicación
 ------------ | -------------
 cmd | El comando a correr
-args | Arreglo con los argumentos
 
 #### Ejemplo:
 
 ```json
 {
-    "cmd": "echo",
-    "args": ["hola"]
+    "cmd": "ls",
 }
 ```
 Como no sabemos de antemano el tiempo que va a llevar el proceso y no podemos utilizar el stream debido a que no estamos usando streaming, el resultado es enviado a un archivo.
@@ -130,6 +130,21 @@ Los procesos tienen 10 segundo para terminar, al cabo de ese tiempo son destruid
 
 El resultado de esta ruta es el **pid** del proceso, y **output**, un id de 32 letras que permite obtener el resultado del proceso. Ver **GET /ps/output/:output**.
 
+### Pipes
+
+Se puede utilizar pipes, retorna el pid de la primera parte del pipe
+
+#### Ejemplo:
+
+```json
+{
+    "cmd": "ls | grep Procfile | wc | awk '{print $3}'"
+}
+```
+
+La última parte del pipe tiene las misma condiciones que un proceso sin pipe, o sea 10 segundos para terminar.
+
+Los errores de cualquier parte del comando son guardados en el output, pero solo el stdout de la ultima es guardado.
 
 ## GET /api/ps/output/:output
 

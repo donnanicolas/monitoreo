@@ -1,15 +1,16 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-import psutil, json, os
+from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-import time
+
+from subprocess import PIPE
+
+import psutil, json, os, time, shlex, threading
+
 from messages import *
-
-import threading
-
 from models import generate_key
 
 '''
@@ -41,25 +42,30 @@ class PsView(NoCSRFView):
         if 'cmd' not in data:
             return JsonResponse(NO_CMD_RESPONSE, status=400)
 
-        cmd = [data['cmd']]
-
-        if 'args' in data:
-            cmd = cmd + data['args']
-
+        cmd = data['cmd']
+        # Random key for the output
         outputKey = generate_key()
         outfile = open('/tmp/' + outputKey + '.out','w')
         errfile = open('/tmp/' + outputKey + '.err','w')
         try:
-            p = psutil.Popen(cmd, stdout=outfile, stderr=errfile)
+            if '|' in cmd:
+                cmd_parts = cmd.split('|')
+                # Run the first part of the pipe
+                p = psutil.Popen(shlex.split(cmd_parts[0]),stdin=None, stdout=PIPE, stderr=errfile)
+                # Do the rest in background
+                t = threading.Thread(target=runPipe, args=(cmd_parts[1:], p, outfile, errfile))
+                t.start()
+            else:
+                # Run the command
+                p = psutil.Popen(shlex.split(cmd), stdout=outfile, stderr=errfile)
+                # Wait in background
+                t = threading.Thread(target=runCmd, args=(p, outfile, errfile))
+                t.start()
         except OSError as e:
             outfile.close()
             errfile.close()
             return JsonResponse(BAD_CMD_RESPONSE, status=400)
-        else:
-            t = threading.Thread(target=runCmd, args=(p, outfile, errfile))
-            t.start()
-
-            return JsonResponse({'result': 'ok', 'process': p.pid, 'output': outputKey })
+        return JsonResponse({'result': 'ok', 'process': p.pid, 'output': outputKey })
 
     # DELETE /ps
     def delete(self, request):
@@ -76,6 +82,7 @@ class PsView(NoCSRFView):
         except Exception as e:
             return JsonResponse(BAD_PID_RESPONSE, status=400)
 
+        # Abort if process doesn't exists
         if not psutil.pid_exists(pid):
             return JsonResponse(NO_PROCESS_PID_RESPONSE, status=400)
 
@@ -84,6 +91,7 @@ class PsView(NoCSRFView):
         if current.pid == pid:
             return JsonResponse(KILL_CURRENT_RESPONSE, status=400)
 
+        # We need to determine if the process is a parent before trying to kill it
         is_parent = False
 
         while True:
@@ -182,11 +190,11 @@ class UserView(NoCSRFView):
         return JsonResponse({'users': user_list, 'result': 'ok'})
 
 class UserTaskView(NoCSRFView):
-    # GET /users/:username/tasks
+    # GET /users/:username/ps
     def get(self, request, user):
         processes = []
-
         for p in psutil.process_iter():
+
             if p.username() != user:
                 continue
             processes.append(p.as_dict())
@@ -211,10 +219,57 @@ Function that runs in background to log the output of the process
 '''
 def runCmd(p, outfile, errfile):
     #Kill after a while
-    #p.communicate
+    waitKillClose(p, outfile, errfile)
+
+'''
+Function that runs the parts of the pipes in the background
+'''
+def runPipe(cmds, firstPipe, outfile, errfile):
+    i = 0
+    ps = {}
+
+    # If only one pipe use the first process input and the exist file
+
+    if len(cmds) == 1 :
+        try:
+            p=psutil.Popen(shlex.split(cmds[0]),stdin=firstPipe.stdout, stdout=outfile, stderr=errfile)
+            waitKillClose(p, outfile, errfile)
+        except OSError as e:
+            errfile.write(str(e))
+            outfile.close()
+            errfile.close()
+        return
+
+    try:
+        for cmd_part in cmds:
+            cmd_part = cmd_part.strip()
+            #In the first use the first process input
+            if i == 0:
+                ps[i]=psutil.Popen(shlex.split(cmd_part),stdin=firstPipe.stdout, stdout=PIPE, stderr=errfile)
+            #If the last pipe to the outfile
+            elif i == len(cmds) - 1:
+                ps[i]=psutil.Popen(shlex.split(cmd_part),stdin=ps[i-1].stdout, stdout=outfile, stderr=errfile)
+            #Else use the previous input and PIPE to the next
+            else:
+                ps[i]=psutil.Popen(shlex.split(cmd_part),stdin=ps[i-1].stdout, stdout=PIPE, stderr=errfile)
+            i=i+1
+    except OSError as e:
+        errfile.write(str(e))
+        if i-1 in ps:
+            waitKillClose(ps[i-1], outfile, errfile)
+            return
+        outfile.close()
+        errfile.close()
+    else:
+        waitKillClose(ps[i-1], outfile, errfile)
+
+def waitKillClose(p, outfile, errfile):
     time.sleep(10)
-    if not p.poll():
-        p.kill()
+    if p.poll() is not None:
+        try:
+            p.kill()
+        except Exception as e:
+            pass
 
     outfile.close()
     errfile.close()
