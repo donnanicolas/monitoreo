@@ -5,7 +5,11 @@ These two commands have permissions problems:
 * **renice**: Can only reduce the priority of a process (greater number) and not increase it
 * **kill**: Can only kill process owned by the user
 
-A solution is the creation of scripts that have some sort of security and allow them to run with `sudo` without password, and run them within the app with `sudo`.
+A solution is the creation of scripts that have some sort of security and allow them to run with `sudo` without password by editing **/etc/sudoers** and adding
+```
+<server-user> ALL= NOPASSWD:/path/to/scripts/script-name.sh
+```
+And then run them within the app with `sudo`.
 
 The password is hashed to avoid any user from reading it. To avoid changes to this scripts they should only be allowed to be written by the **root**.
 
