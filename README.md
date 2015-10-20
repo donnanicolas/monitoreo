@@ -179,6 +179,10 @@ pid | Id del proceso
 
 ### Posibles soluciones
 
+#### Ver la carpeta scripts
+
+Ver [scripts](scripts/)
+
 #### Correr el servidor como root
 
 **Atención: esto puede exponer su servidor. No se recomienda esta solución**
@@ -212,6 +216,10 @@ priority | Nueva prioridad. Valor en -20 y 20
 El comando **renice** requiere permisos especiales, por lo tanto solo podrá ser utilizado si el proceso del servidor tiene permisos para hacerlo.
 
 ### Posibles soluciones
+
+#### Ver la carpeta scripts
+
+Ver [scripts](scripts/)
 
 #### Correr el servidor como Root
 **Atención: esto puede exponer su servidor. No se recomienda esta solución**
