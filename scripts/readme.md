@@ -1,40 +1,38 @@
-# Scripts for KILL and RENICE
+# Scripts para KILL and RENICE
 
-These two commands have permissions problems:
+Estos dos comandos tiene problemas con los permisos
 
-* **renice**: Can only reduce the priority of a process (greater number) and not increase it
-* **kill**: Can only kill process owned by the user
+* **renice**: Solo puede reducir la prioridad de los procesos sin ser root
+* **kill**: Solo puede matar procesos que son del usuario
 
-A solution is the creation of scripts that have some sort of security and allow them to run with `sudo` without password by editing **/etc/sudoers** and adding
+Una posible solucón es la creación de scripts que tiene algún tipo de seguridad (contraseña por ejemplo) y permitir que se corran como **root** sin password. Esto se puede hacer editando **/etc/sudoers** y agregar:
 ```
 <server-user> ALL= NOPASSWD:/path/to/scripts/script-name.sh
 ```
-And then run them within the app with `sudo`.
+Luego se correra el servidor debe correr el script con **sudo**
 
-The password is hashed to avoid any user from reading it. To avoid changes to this scripts they should only be allowed to be written by the **root**.
+La contraseña tiene que estar hasheada para evitar que se pueda leer simplemente. Para evitar cambios en los scripts se deben setear los permisos para evitar escritura (máximo 555). Solo se debería poder escribir siendo root
 
-The recommended settings are **500** (for chmod) and the running user should be the owner.
+Los scripts [sudo_renice](sudo_renice.sh) y [sudo_kill](sudo_kill.sh) son ejemplos de esta solución. El password en los mismos es **testpasswd**
 
-The password hashed in the files is **testpasswd**
+## sudo_renice
 
-## renice
+El script recibe 3 argumentos : **pass**, **priority** and **pid**
 
-The scripts takes 3 arguments: **pass**, **priority** and **pid**
-
-### Example
+### Ejemplo
 ```
 sudo /path/to/script/sudo_renice.sh passwd -10 7300
 ```
 
-If the password is correct it will set the priority regardless the value.
+Si la contraseña es correcta entonces cambia la prioridad.
 
-## kill
+## sudo_kill
 
-The scripts takes 2 arguments: **pass** and **pid**
+El script recibe 2 argumentos: **pass** and **pid**
 
 ### Example
 ```
 sudo /path/to/script/sudo_kill.sh passwd 7300
 ```
 
-This scripts also checks the password, but it will not run if the process is owned by the **root**
+Este script también checkea la contraseña, pero además comprueba que el proceso no pertenezca a **root**
