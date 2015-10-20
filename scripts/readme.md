@@ -5,11 +5,11 @@ Estos dos comandos tiene problemas con los permisos
 * **renice**: Solo puede reducir la prioridad de los procesos sin ser root
 * **kill**: Solo puede matar procesos que son del usuario
 
-Una posible solucón es la creación de scripts que tiene algún tipo de seguridad (contraseña por ejemplo) y permitir que se corran como **root** sin password. Esto se puede hacer editando **/etc/sudoers** y agregar:
+Una posible solución es la creación de scripts que tiene algún tipo de seguridad (contraseña por ejemplo) y permitir que se corran como **root** sin password. Esto se puede hacer editando **/etc/sudoers** y agregar:
 ```
 <server-user> ALL= NOPASSWD:/path/to/scripts/script-name.sh
 ```
-Luego se correra el servidor debe correr el script con **sudo**
+Luego se correran en el servidorcon **sudo**
 
 La contraseña tiene que estar hasheada para evitar que se pueda leer simplemente. Para evitar cambios en los scripts se deben setear los permisos para evitar escritura (máximo 555). Solo se debería poder escribir siendo root
 
